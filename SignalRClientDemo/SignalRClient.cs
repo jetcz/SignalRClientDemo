@@ -3,7 +3,6 @@ using System.Net;
 
 public class SignalRClient
 {
-
     /// <summary>
     /// Declaration of a public event
     /// </summary>
@@ -25,16 +24,19 @@ public class SignalRClient
         StartAgentRequest?.Invoke(this, args);
     }
 
+    private readonly AdpointInstance _Instance;
 
 
-    public SignalRClient()
+    public SignalRClient(AdpointInstance instance)
     {
+        _Instance = instance;
+
         Connect();
     }
 
     private void Connect()
     {
-        var connection = new HubConnection("http://localhost/sangdev/signalr/anonymous", false) //adpoint web.config: AdpointSignalRURL
+        var connection = new HubConnection(_Instance.URL, false) //adpoint web.config: AdpointSignalRURL
         {
             Credentials = CredentialCache.DefaultCredentials //ntlm, only useful for devs but it works with anonymous too
         };
@@ -45,7 +47,7 @@ public class SignalRClient
 
         var hubProxy = connection.CreateHubProxy("agentsHub");
 
-        hubProxy.On<StartAgentEventArgs.Agents>("SendMessage", message => StartAgentRequestHandler(new StartAgentEventArgs() { Agent = message })); //listen for messages
+        hubProxy.On<string>("SendMessage", message => StartAgentRequestHandler(new StartAgentEventArgs() { Instance = _Instance.Name, AgentName = message })); //listen for messages
 
         var task = connection.Start();
 
